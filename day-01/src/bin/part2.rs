@@ -2,7 +2,7 @@ use regex::Regex;
 use std::collections::HashMap;
 
 fn main() {
-    let input = include_str!("./input1.txt");
+    let input = include_str!("./input.txt");
     let output = part2(input);
     dbg!(output);
 }
