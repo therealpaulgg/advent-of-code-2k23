@@ -1,4 +1,4 @@
-use regex::Regex;
+use regex::{Regex, Match};
 
 fn main() {
     let input = include_str!("./input.txt");
@@ -11,33 +11,23 @@ fn part2(input: &str) -> String {
     let gear_match = Regex::new(r"\*").unwrap();
     let lines: Vec<_> = input.lines().collect();
     let mut sum = 0;
+    fn format_number(m: Match<'_>) -> (usize, usize, u32) {
+        let num = m.as_str().parse::<u32>().unwrap();
+        let start = m.start();
+        let end = m.end();
+        (start, end, num)
+    }
     for (i, line) in lines.iter().enumerate() {
-        let cur_line_num_mapping: Vec<_> = num_match.find_iter(line).map(|m| {
-            let num = m.as_str().parse::<u32>().unwrap();
-            let start = m.start();
-            let end = m.end();
-            (start, end, num)
-        }).collect();
+        let cur_line_num_mapping: Vec<_> = num_match.find_iter(line).map(format_number).collect();
         let prev_line = match i.checked_sub(1) {
             Some(i) => lines.get(i),
             None => None,
         }
         .unwrap_or(&"");
-        let prev_line_num_mapping: Vec<_> = num_match.find_iter(prev_line).map(|m| {
-            let num = m.as_str().parse::<u32>().unwrap();
-            let start = m.start();
-            let end = m.end();
-            (start, end, num)
-        }).collect();
+        let prev_line_num_mapping: Vec<_> = num_match.find_iter(prev_line).map(format_number).collect();
         let next_line = lines.get(i + 1).unwrap_or(&"");
-        let next_line_num_mapping: Vec<_> = num_match.find_iter(next_line).map(|m| {
-            let num = m.as_str().parse::<u32>().unwrap();
-            let start = m.start();
-            let end = m.end();
-            (start, end, num)
-        }).collect();
+        let next_line_num_mapping: Vec<_> = num_match.find_iter(next_line).map(format_number).collect();
         gear_match.find_iter(line).for_each(|m| {
-            let gear = m.as_str();
             let idx = m.start();
             sum += calculate_gear(idx, &prev_line_num_mapping, &next_line_num_mapping, &cur_line_num_mapping);
         });
@@ -63,7 +53,6 @@ fn calculate_gear(
         }
     });
     current_line.iter().for_each(|(start, end, num)| {
-        // If the current line has a number to the left or to the right
         if idx == *end || idx + 1 == *start {
             numbers.push(*num);
         }
