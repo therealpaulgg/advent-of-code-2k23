@@ -120,9 +120,8 @@ fn part2(input: &str) -> String {
                 let (src, upper_bound, distance) = range;
                 let len = upper_bound - src;
                 let dst = src + distance;
-                let diff = src - dst;
                 if seeker_val >= dst && seeker_val < dst + len {
-                    seeker_val += diff;
+                    seeker_val -= distance;
                     break;
                 }
             }
