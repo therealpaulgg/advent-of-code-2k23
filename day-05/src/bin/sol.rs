@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::Lines, cmp};
 
 use regex::Regex;
 
@@ -23,7 +23,29 @@ fn part1(input: &str) -> String {
         .collect::<Vec<_>>();
 
     let mut lines = input.lines();
+
+    let maps = construct_maps(&mut lines);
+
+    for map in maps {
+        for i in 0..seeds.len() {
+            let seed = seeds[i];
+            for range in map.clone() {
+                let (src, upper_bound, distance) = range;
+                if seed >= src && seed < upper_bound {
+                    seeds[i] = seed + distance;
+                    break;
+                }
+            }
+        }
+    }
+    seeds.sort();
+    seeds[0].to_string()
+}
+
+fn construct_maps(lines: &mut Lines) -> Vec<Vec<(i64, i64, i64)>> {
     let map_re = Regex::new(r"(\w+)-to-(\w+) map:").unwrap();
+
+    let mut maps: Vec<Vec<(i64, i64, i64)>> = Vec::new();
     // while there are still lines...
     loop {
         match lines.next() {
@@ -53,28 +75,69 @@ fn part1(input: &str) -> String {
                             None => break,
                         }
                     }
-                    for i in 0..seeds.len() {
-                        let seed = seeds[i];
-                        for range in ranges.clone() {
-                            let (src, upper_bound, distance) = range;
-                            if seed >= src && seed < upper_bound {
-                                seeds[i] = seed + distance;
-                                break;
-                            }
-                        }
-                    }
+                    maps.push(ranges);
                 }
-            },
+            }
             None => break,
         }
     }
-    seeds.sort();
-    seeds[0].to_string()
+    maps
 }
 
 fn part2(input: &str) -> String {
-    // probably have to construct all the 'maps' before hand for part 2 since the number of seeds is so much.
-    "".to_string()
+    // NO probably have to construct all the 'maps' before hand for part 2 since the number of seeds is so much.
+
+    // thought: Seed ranges can correspond to multiple seed to soil ranges.
+    // Find all those ranges, iterate over all of them, and drill down to try to find the smallest value.
+    // Every 2 numbers is a pair, so this isnt a list of numbers, but a list of (i64, i64)
+    let seeds = input
+        .lines()
+        .next()
+        .unwrap()
+        .split("seeds: ")
+        .nth(1)
+        .unwrap()
+        .split(' ')
+        .map(|x| x.parse::<i64>().unwrap())
+        .collect::<Vec<_>>();
+
+    let seed_ranges = seeds
+        .chunks(2)
+        .map(|chunk| (chunk[0], chunk[1]))
+        .collect::<Vec<(i64, i64)>>();
+
+    let mut lines = input.lines();
+
+    let maps = construct_maps(&mut lines);
+
+    let mut mins: Vec<i64> = Vec::new();
+
+    let mut location = 0;
+    let mut seeker_val = location;
+    loop {
+        for map in maps.iter().rev() {
+            for range in map.clone() {
+                let (src, upper_bound, distance) = range;
+                let len = upper_bound - src;
+                let dst = src + distance;
+                let diff = src - dst;
+                if seeker_val >= dst && seeker_val < dst + len {
+                    seeker_val += diff;
+                    break;
+                }
+            }
+        }
+        // check if seed in seed range
+        for seed_range in seed_ranges.clone() {
+            if seeker_val >= seed_range.0 && seeker_val < seed_range.0 + seed_range.1 {
+                return location.to_string();
+            }
+        }
+        location += 1;
+        seeker_val = location;
+    }
+
+    "unknown".to_string()
 }
 
 #[cfg(test)]
@@ -124,6 +187,6 @@ humidity-to-location map:
     #[test]
     fn part2_test() {
         let result = part2(EXAMPLE);
-        assert_eq!(result, "30".to_string());
+        assert_eq!(result, "46".to_string());
     }
 }
