@@ -73,6 +73,7 @@ fn part1(input: &str) -> String {
 }
 
 fn part2(input: &str) -> String {
+    // probably have to construct all the 'maps' before hand for part 2 since the number of seeds is so much.
     "".to_string()
 }
 
