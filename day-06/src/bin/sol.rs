@@ -48,7 +48,30 @@ fn part1(input: &str) -> String {
 }
 
 fn part2(input: &str) -> String {
-    "".to_string()
+    let mut lines = input.lines();
+    let time = lines.next().unwrap().split(":").nth(1).unwrap().replace(" ", "").parse::<i64>().unwrap();
+    let distance = lines.next().unwrap().split(":").nth(1).unwrap().replace(" ", "").parse::<i64>().unwrap();
+    // calculate all the ways it is NOT possible to win
+    let mut not_possible = 0;
+    for i in 0..time {
+        let speed = i;
+        let total_traveled = (time - i) * speed;
+        if total_traveled <= distance {
+            not_possible += 1
+        } else {
+            break;
+        }
+    }
+    for i in (0..time).rev() {
+        let speed = i;
+        let total_traveled = (time - i) * speed;
+        if total_traveled <= distance {
+            not_possible += 1
+        } else {
+            break;
+        }
+    }
+    (time - not_possible).to_string()
 }
 
 #[cfg(test)]
@@ -67,6 +90,6 @@ Distance:  9  40  200";
     #[test]
     fn part2_test() {
         let result = part2(EXAMPLE);
-        assert_eq!(result, "30".to_string());
+        assert_eq!(result, "71503".to_string());
     }
 }
