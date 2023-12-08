@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use regex::Regex;
 
 fn main() {
     let input = include_str!("./input.txt");
@@ -9,6 +10,24 @@ fn main() {
 }
 
 fn part1(input: &str) -> String {
+    let cap = Regex::new(r"(\w+) (\d+)").unwrap();
+    let hands = input.lines().map(|line| {
+        let capt = cap.captures(line).unwrap();
+        let hand = capt.get(1).unwrap().as_str();
+        let num = capt.get(2).unwrap().as_str().parse::<u32>().unwrap();
+        let hand_type = classify_hand(hand);
+        (hand_type, hand, num)
+    });
+    let col  = hands.collect::<Vec<_>>();
+    // map by hand type
+    let mut hand_map: HashMap<Hand, (Hand, &str, u32)> = HashMap::new();
+    hands.for_each(|hand| {
+        let (hand_type, hand, num) = hand;
+        let entry = hand_map.entry(hand_type).or_insert((hand_type, hand, num));
+        if entry.2 < num {
+            *entry = (hand_type, hand, num);
+        }
+    });
     "".to_string()
 }
 
@@ -16,7 +35,7 @@ fn part2(input: &str) -> String {
     "".to_string()
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 enum Hand {
     HighCard,
     OnePair,
