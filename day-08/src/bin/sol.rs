@@ -25,19 +25,9 @@ fn part1(input: &str) -> String {
         })
         .collect();
 
-    let mut pointer = "AAA";
-    let end = "ZZZ";
+    let pointer = "AAA";
     let mut steps = 0;
-    while pointer != end {
-        let path = map.get(pointer).unwrap();
-        let direction = directions.chars().nth(steps % directions.len()).unwrap();
-        pointer = match direction {
-            'L' => path.0,
-            'R' => path.1,
-            _ => panic!("Invalid direction"),
-        };
-        steps += 1;
-    }
+    steps = traverse(directions, map.clone(), pointer, steps, false);
 
     steps.to_string()
 }
@@ -60,7 +50,7 @@ fn part2(input: &str) -> String {
     let pointer_nodes = map.keys().filter(|x| x.ends_with('A'));
 
     let steps_total: Vec<_> = pointer_nodes
-        .map(|node| traverse(directions, map.clone(), node, 0))
+        .map(|node| traverse(directions, map.clone(), node, 0, true))
         .collect();
 
     lcm_vec(steps_total).to_string()
@@ -85,8 +75,11 @@ fn traverse(
     map: HashMap<&str, (&str, &str)>,
     current: &str,
     steps: usize,
+    part2: bool
 ) -> usize {
-    if current.ends_with('Z') {
+    if part2 && current.ends_with('Z') {
+        return steps;
+    } else if !part2 && current == "ZZZ" {
         return steps;
     }
     let path = map.get(current).unwrap();
@@ -96,7 +89,7 @@ fn traverse(
         'R' => path.1,
         _ => panic!("Invalid direction"),
     };
-    return traverse(directions, map, pointer, steps + 1);
+    return traverse(directions, map, pointer, steps + 1, part2);
 }
 
 #[cfg(test)]
