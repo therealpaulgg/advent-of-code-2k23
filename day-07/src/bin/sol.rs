@@ -1,5 +1,7 @@
 use regex::Regex;
+use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 fn main() {
     let input = include_str!("./input.txt");
@@ -10,30 +12,71 @@ fn main() {
 }
 
 fn part1(input: &str) -> String {
+    let card_value_mapping = HashMap::from([
+        ('2', 1),
+        ('3', 2),
+        ('4', 3),
+        ('5', 4),
+        ('6', 5),
+        ('7', 6),
+        ('8', 7),
+        ('9', 8),
+        ('T', 9),
+        ('J', 10),
+        ('Q', 11),
+        ('K', 12),
+        ('A', 13),
+    ]);
     let cap = Regex::new(r"(\w+) (\d+)").unwrap();
     let hands = input.lines().map(|line| {
         let capt = cap.captures(line).unwrap();
         let hand = capt.get(1).unwrap().as_str();
-        let num = capt.get(2).unwrap().as_str().parse::<u32>().unwrap();
+        let num = capt.get(2).unwrap().as_str().parse::<usize>().unwrap();
         let hand_type = classify_hand(hand);
         (hand_type, hand, num)
     });
     let col = hands.clone().collect::<Vec<_>>();
     // map by hand type
-    let mut hand_map: HashMap<Hand, Vec<((Hand, char), &str, u32)>> = HashMap::new();
+    let mut hand_map: BTreeMap<Hand, Vec<((Hand, char), &str, usize)>> = BTreeMap::new();
     hands.clone().for_each(|hand| {
         let (hand_type, hand, num) = hand;
         let entry = hand_map.entry(hand_type.0).or_insert(Vec::new());
         entry.push((hand_type, hand, num));
     });
-    "".to_string()
+    // sort hand_map by hand type
+    let mut stuff: Vec<_> = hand_map.clone().into_iter().map(|score| score).collect();
+    stuff.sort_by_key(|f| f.0);
+    let mut all_vals: Vec<((Hand, char), &str, usize)> = Vec::new();
+    for mut thing in hand_map.clone() {
+        thing.1.sort_by(|a, b| {
+            let a_val = *card_value_mapping.get(&a.0.1).unwrap();
+            let b_val = *card_value_mapping.get(&b.0.1).unwrap();
+            if a_val == b_val {
+                for i in 0..5 {
+                    let char_a = a.1.chars().nth(i).unwrap();
+                    let char_b = b.1.chars().nth(i).unwrap();
+                    let cmp = card_value_mapping.get(&char_a).unwrap().cmp(card_value_mapping.get(&char_b).unwrap());
+                    if cmp != Ordering::Equal {
+                        return cmp
+                    }
+                }
+            }
+            return a_val.cmp(&b_val)
+        });
+        all_vals.append(&mut thing.1)
+    }
+    let mut total: usize = 0;
+    for i in 0..all_vals.len() {
+        total += all_vals.get(i).unwrap().2 * (i + 1)
+    }
+    total.to_string()
 }
 
 fn part2(input: &str) -> String {
     "".to_string()
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, PartialOrd, Ord)]
 enum Hand {
     HighCard,
     OnePair,
